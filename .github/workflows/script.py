@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: '8'
+        java: '11'
     steps:
     - uses: actions/setup-python@v2
       with:
@@ -71,5 +71,5 @@ jobs:
         destination-github-username: 'UT-SE-Research'
         destination-repository-name: 'ci-analyzes'
         target-branch: '1674699497'
-        target-directory: 'bytecode-viewer/.github/workflows/maven/build_8'
+        target-directory: 'bytecode-viewer/.github/workflows/maven/build_11'
 
