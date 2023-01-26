@@ -35,3 +35,4 @@ jobs:
         name: Bytecode-Viewer-${{ steps.project.outputs.version }}-SNAPSHOT
         path: target/Bytecode-Viewer-${{ steps.project.outputs.version }}.jar
         retention-days: 90
+
