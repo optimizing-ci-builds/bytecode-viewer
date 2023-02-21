@@ -2,11 +2,7 @@
 
 name: Build BCV
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
   build:
@@ -17,21 +13,75 @@ jobs:
         java: [ '8', '11', '17' ] # LTS versions
 
     steps:
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas
+        pip install numpy
+    - run: sudo apt update
+    - run: sudo apt install inotify-tools
+    - run: inotifywait -mr /home/runner/work/bytecode-viewer/bytecode-viewer/ --format '%T;%w;%f;%e' --timefmt %T -o /home/runner/inotify-logs.csv & echo 'optimizing-ci-builds'
+    - run: touch starting_build_uses-checkout_20
+    - run: rm starting_build_uses-checkout_20
     - uses: actions/checkout@v2
+    - run: touch starting_build_SetupJDKmatrixjava_21
+    - run: rm starting_build_SetupJDKmatrixjava_21
     - name: Set up JDK ${{ matrix.java }}
       uses: actions/setup-java@v2
       with:
         java-version: ${{ matrix.java }}
         distribution: 'temurin'
+    - run: touch starting_build_BuildwithMaven_26
+    - run: rm starting_build_BuildwithMaven_26
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+    - run: touch starting_build_ExtractMavenprojectversion_28
+    - run: rm starting_build_ExtractMavenprojectversion_28
     - name: Extract Maven project version
       run: echo ::set-output name=version::$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
       id: project
+    - run: touch starting_build_UploadArtifact_31
+    - run: rm starting_build_UploadArtifact_31
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v2
-      if: ${{ matrix.java == '8' }}
       with:
         name: Bytecode-Viewer-${{ steps.project.outputs.version }}-SNAPSHOT
         path: target/Bytecode-Viewer-${{ steps.project.outputs.version }}.jar
         retention-days: 90
+    - run: touch starting_finished_finished_8979874
+      if: always()
+    - run: rm starting_finished_finished_8979874
+      if: always()
+    - name: Execute py script # run file
+      if: always()
+      run: |
+        python .github/workflows/script.py
+    - name: Checkout to destination CI-analyzes repo
+      uses: actions/checkout@v3
+      if: always()
+      with:
+        path: bytecode-viewer
+        ref: '1677007978-8618598'
+        repository: 'UT-SE-Research/ci-analyzes'
+        token: '${{ secrets.API_TOKEN_GITHUB }}'
+        persist-credentials: true
+    - name: Copy files to push to another directory
+      if: always()
+      run: |
+        mkdir -p bytecode-viewer/bytecode-viewer/.github/workflows/maven/build_java_${{ matrix.java }}
+        cp -rvT optimizing-ci-builds-ci-analysis bytecode-viewer/bytecode-viewer/.github/workflows/maven/build_java_${{ matrix.java }}
+    - name: Pushes analysis to another repository
+      if: always()
+      working-directory: bytecode-viewer
+      run: |
+        git config --global user.name 'UT-SE-Research'
+        git config --global user.email '${{ secrets.EMAIL }}'
+        git add .
+        git commit -m 'rebased and pushed'
+        while ! git push -f origin 1677007978-8618598; do
+          git pull --rebase origin 1677007978-8618598
+          sleep $((RANDOM % 5 + 1))
+        done
